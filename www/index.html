@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Random Picture</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1f1f1f;--mute:#6b6b6b;--line:#ddd8cc;--accent:#2f6f5e;--accent-ink:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161816;--card:#202320;--ink:#eee;--mute:#9a9f9a;--line:#383d38;--accent:#6fcfb4;--accent-ink:#0d1a16}}
+:root[data-theme="dark"]{--bg:#161816;--card:#202320;--ink:#eee;--mute:#9a9f9a;--line:#383d38;--accent:#6fcfb4;--accent-ink:#0d1a16}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;justify-content:center}
+main{width:100%;max-width:480px;padding:20px 16px 32px}
+h1{font-size:20px;margin:0 0 4px}
+p.sub{margin:0 0 16px;color:var(--mute);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--mute);padding:8px 14px;border-radius:999px;font-size:14px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:32px 16px;text-align:center;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.pic{font-size:128px;line-height:1}
+.mono{width:200px;height:200px;border-radius:20px;background:var(--line);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:64px;font-weight:600;margin:0 auto}
+.photo{max-width:100%;max-height:260px;width:auto;height:auto;border-radius:14px;display:block;margin:0 auto;object-fit:contain}
+.menu{position:fixed;z-index:20;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.25);padding:6px;display:none;min-width:170px}
+.menu button{display:block;width:100%;text-align:left;border:0;background:none;color:inherit;font-size:15px;padding:10px 12px;border-radius:8px;cursor:pointer}
+.menu button:hover{background:var(--line)}
+.menu .danger{color:#c0392b}
+#rest{margin-top:6px;text-align:center;font-size:12px}
+#rest a{color:var(--accent);cursor:pointer;text-decoration:underline}
+.pic{cursor:context-menu;user-select:none}
+.name{font-size:26px;font-weight:600}
+.tag{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+button.next{margin-top:18px;width:100%;padding:14px;font-size:17px;border:0;border-radius:14px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.note{margin-top:14px;font-size:12px;color:var(--mute);text-align:center}
+</style>
+</head>
+<body>
+<main>
+<h1>Random Picture</h1>
+<p class="sub">Pick categories, then tap Next.</p>
+<div class="chips" id="chips"></div>
+<div class="card" aria-live="polite">
+<div class="pic" id="pic">🎲</div>
+<div class="name" id="name">Tap Next to start</div>
+<div class="tag" id="tag"></div>
+</div>
+<button class="next" id="next">Next</button>
+<div class="menu" id="menu"><button class="danger" id="delbtn">Delete this entry</button><button id="cancelbtn">Cancel</button></div>
+<div class="note" id="note">Right-click or double-click a picture to delete it. Pictures load from Wikipedia and need an internet connection; emoji or initials show if none is found.</div>
+<div id="rest"></div>
+</main>
+<script>
+const flag=c=>String.fromCodePoint(...[...c].map(x=>127397+x.charCodeAt(0)));
+const PEOPLE=`Mahatma Gandhi|Freedom leader, India;Albert Einstein|Physicist, Germany/USA;Marie Curie|Scientist, Poland/France;Nelson Mandela|Statesman, South Africa;Mother Teresa|Humanitarian, Albania/India;Leonardo da Vinci|Artist, Italy;William Shakespeare|Writer, England;Cleopatra|Queen, Egypt;Napoleon|Emperor, France;Abraham Lincoln|President, USA;Martin Luther King Jr.|Civil rights, USA;Muhammad Ali|Boxer, USA;Pelé|Footballer, Brazil;Lionel Messi|Footballer, Argentina;Cristiano Ronaldo|Footballer, Portugal;Sachin Tendulkar|Cricketer, India;Virat Kohli|Cricketer, India;Usain Bolt|Sprinter, Jamaica;Serena Williams|Tennis, USA;Michael Jordan|Basketball, USA;Bruce Lee|Martial artist, Hong Kong/USA;Jackie Chan|Actor, Hong Kong;Amitabh Bachchan|Actor, India;Mohanlal|Actor, India;Rajinikanth|Actor, India;A. R. Rahman|Composer, India;Lata Mangeshkar|Singer, India;Satyajit Ray|Filmmaker, India;Rabindranath Tagore|Poet, India;A. P. J. Abdul Kalam|Scientist, India;Srinivasa Ramanujan|Mathematician, India;C. V. Raman|Physicist, India;Kalpana Chawla|Astronaut, India/USA;Mary Kom|Boxer, India;Akira Kurosawa|Filmmaker, Japan;Hayao Miyazaki|Animator, Japan;Haruki Murakami|Novelist, Japan;Confucius|Philosopher, China;Gong Li|Actress, China;Malala Yousafzai|Activist, Pakistan;Nikola Tesla|Inventor, Serbia/USA;Isaac Newton|Physicist, England;Stephen Hawking|Physicist, England;Charles Darwin|Naturalist, England;Galileo Galilei|Astronomer, Italy;Avicenna|Polymath, Persia;Rumi|Poet, Persia;Omar Khayyam|Poet, Persia;Frida Kahlo|Painter, Mexico;Pablo Picasso|Painter, Spain;Vincent van Gogh|Painter, Netherlands;Gabriel García Márquez|Novelist, Colombia;Pablo Neruda|Poet, Chile;Diego Maradona|Footballer, Argentina;Bob Marley|Musician, Jamaica;Michael Jackson|Singer, USA;Elvis Presley|Singer, USA;Beyoncé|Singer, USA;Shakira|Singer, Colombia;Fela Kuti|Musician, Nigeria;Miriam Makeba|Singer, South Africa;Chinua Achebe|Novelist, Nigeria;Wole Soyinka|Writer, Nigeria;Wangari Maathai|Environmentalist, Kenya;Kofi Annan|Diplomat, Ghana;Haile Selassie|Emperor, Ethiopia;Kwame Nkrumah|Statesman, Ghana;Youssou N'Dour|Singer, Senegal;Oprah Winfrey|Broadcaster, USA;Steve Jobs|Entrepreneur, USA;Bill Gates|Entrepreneur, USA;Sundar Pichai|Executive, India/USA;Charlie Chaplin|Actor, England;Marilyn Monroe|Actress, USA;Audrey Hepburn|Actress, Belgium/UK;Morgan Freeman|Actor, USA;Meryl Streep|Actress, USA;Priyanka Chopra|Actress, India;Deepika Padukone|Actress, India;Omar Sharif|Actor, Egypt;Salma Hayek|Actress, Mexico;Lupita Nyong'o|Actress, Kenya/Mexico;Idris Elba|Actor, England;Yuri Gagarin|Cosmonaut, USSR;Neil Armstrong|Astronaut, USA;Valentina Tereshkova|Cosmonaut, USSR;Rosa Parks|Activist, USA;Joan of Arc|Heroine, France;Genghis Khan|Emperor, Mongolia;Alexander the Great|King, Macedon;Ashoka|Emperor, India;Akbar|Emperor, India;Queen Victoria|Monarch, UK;Wolfgang Amadeus Mozart|Composer, Austria;Ludwig van Beethoven|Composer, Germany;Ravi Shankar|Sitarist, India;Kishore Kumar|Singer, India;Dhyan Chand|Hockey, India;P. T. Usha|Sprinter, India;Roger Federer|Tennis, Switzerland;Jack Ma|Entrepreneur, China;Yo-Yo Ma|Cellist, France/USA`.split(';').map(x=>{const[a,b]=x.split('|');return[a,a,b]});
+const XA=`Cheetah;Hyena;Lynx;Jaguar;Cougar;Moose;American bison;Yak;Llama;Alpaca;Ostrich;Emu;Kiwi=Kiwi (bird);Toucan;Pelican;Swan;Duck;Hummingbird;Crow;Sparrow;Wombat;Platypus;Tasmanian devil;Komodo dragon;Chameleon;Iguana;King cobra;Axolotl;Seahorse;Jellyfish;Starfish;Manta ray;Orca;Narwhal;Walrus;Polar bear;Red panda;Meerkat;Lemur;Orangutan;Chimpanzee;Bonobo;Armadillo;Giant anteater;Capybara;Beaver;Raccoon;Skunk;Badger;Mongoose;Tapir;Okapi;Gazelle;Water buffalo;Goat;Donkey;Cat;Dog;Spider;Dragonfly;Grasshopper;Snail;Squid;Lobster;Clownfish;Pufferfish;Salmon;Moray eel;Bald eagle;Albatross;Vulture;Hornbill;Kingfisher;Cassowary;Pangolin;Aardvark;Fennec fox;Snow leopard;Bengal tiger;Asian elephant;Gharial;Slow loris;Sun bear;Dugong;Manatee;Blue whale;Hammerhead shark;Sea turtle;Quokka;Numbat;Thorny devil;Kakapo;Mandrill;Proboscis monkey;Ibex;Takin;Arctic fox;Reindeer;Musk ox;Wolverine;Honey badger;Aye-aye;Pika;Dodo;Narwhal;Gibbon;Tarsier;Lion-tailed macaque;Nilgiri tahr;Great Indian bustard;Malabar giant squirrel`;
+const XP=`Indira Gandhi|Prime Minister, India;Jawaharlal Nehru|Statesman, India;B. R. Ambedkar|Jurist, India;Swami Vivekananda|Monk, India;Subhas Chandra Bose|Freedom fighter, India;Kamal Haasan|Actor, India;Mammootty|Actor, India;K. J. Yesudas|Singer, India;Raja Ravi Varma|Painter, India;Anil Kumble|Cricketer, India;MS Dhoni|Cricketer, India;Neeraj Chopra|Javelin, India;PV Sindhu|Badminton, India;Viswanathan Anand|Chess, India;Fidel Castro|Revolutionary, Cuba;Che Guevara|Revolutionary, Argentina;Simón Bolívar|Liberator, Venezuela;Diego Rivera|Painter, Mexico;Jorge Luis Borges|Writer, Argentina;Isabel Allende|Novelist, Chile;Ayrton Senna|Racing driver, Brazil;Ronaldinho|Footballer, Brazil;Neymar|Footballer, Brazil;Rafael Nadal|Tennis, Spain;Novak Djokovic|Tennis, Serbia;Mohamed Salah|Footballer, Egypt;Sadio Mané|Footballer, Senegal;Didier Drogba|Footballer, Ivory Coast;Eliud Kipchoge|Marathoner, Kenya;Haile Gebrselassie|Runner, Ethiopia;Naguib Mahfouz|Novelist, Egypt;Umm Kulthum|Singer, Egypt;Fairuz|Singer, Lebanon;Khalil Gibran|Poet, Lebanon;Mahmoud Darwish|Poet, Palestine;Orhan Pamuk|Novelist, Turkey;Gamal Abdel Nasser|President, Egypt;Golda Meir|Prime Minister, Israel;Shirin Ebadi|Lawyer, Iran;Abbas Kiarostami|Filmmaker, Iran;Ho Chi Minh|Revolutionary, Vietnam;Aung San Suu Kyi|Politician, Myanmar;José Rizal|National hero, Philippines;Manny Pacquiao|Boxer, Philippines;Lee Kuan Yew|Statesman, Singapore;Sukarno|President, Indonesia;Psy|Singer, South Korea;Bong Joon-ho|Filmmaker, South Korea;Son Heung-min|Footballer, South Korea;Yao Ming|Basketball, China;Li Na|Tennis, China;Zhang Yimou|Filmmaker, China;Sun Yat-sen|Revolutionary, China;Shohei Ohtani|Baseball, Japan;Naomi Osaka|Tennis, Japan;Yayoi Kusama|Artist, Japan;Hokusai|Artist, Japan;Winston Churchill|Statesman, UK;Queen Elizabeth II|Monarch, UK;Princess Diana|Royal, UK;Charles Dickens|Novelist, UK;Jane Austen|Novelist, UK;J. K. Rowling|Author, UK;David Bowie|Musician, UK;Freddie Mercury|Singer, Zanzibar/UK;John Lennon|Musician, UK;Adele|Singer, UK;Alan Turing|Mathematician, UK;Ada Lovelace|Mathematician, UK;Florence Nightingale|Nurse, UK;Lewis Hamilton|Racing driver, UK;David Beckham|Footballer, UK;Charles de Gaulle|Statesman, France;Victor Hugo|Writer, France;Coco Chanel|Designer, France;Édith Piaf|Singer, France;Zinedine Zidane|Footballer, France;Kylian Mbappé|Footballer, France;Louis Pasteur|Scientist, France;Claude Monet|Painter, France;Angela Merkel|Chancellor, Germany;Johann Wolfgang von Goethe|Writer, Germany;Karl Marx|Philosopher, Germany;Michael Schumacher|Racing driver, Germany;Sigmund Freud|Psychoanalyst, Austria;Dante Alighieri|Poet, Italy;Michelangelo|Artist, Italy;Sophia Loren|Actress, Italy;Luciano Pavarotti|Tenor, Italy;Valentino Rossi|Rider, Italy;Miguel de Cervantes|Writer, Spain;Salvador Dalí|Painter, Spain;Fyodor Dostoevsky|Novelist, Russia;Leo Tolstoy|Novelist, Russia;Garry Kasparov|Chess, Russia;Greta Thunberg|Activist, Sweden;Zlatan Ibrahimović|Footballer, Sweden;Magnus Carlsen|Chess, Norway;Hans Christian Andersen|Writer, Denmark;Johan Cruyff|Footballer, Netherlands;Rembrandt|Painter, Netherlands;Anne Frank|Diarist, Germany/Netherlands;Pope Francis|Pope, Argentina;Frédéric Chopin|Composer, Poland;Nicolaus Copernicus|Astronomer, Poland;Plato|Philosopher, Greece;Aristotle|Philosopher, Greece;Archimedes|Mathematician, Greece;Giannis Antetokounmpo|Basketball, Greece/Nigeria;Bob Dylan|Singer, USA;Madonna|Singer, USA;Taylor Swift|Singer, USA;Kendrick Lamar|Rapper, USA;Louis Armstrong|Jazz, USA;Jimi Hendrix|Guitarist, USA;Maya Angelou|Poet, USA;Toni Morrison|Novelist, USA;Ernest Hemingway|Novelist, USA;Mark Twain|Writer, USA;Walt Disney|Producer, USA;Steven Spielberg|Filmmaker, USA;Denzel Washington|Actor, USA;Dwayne Johnson|Actor, USA;Leonardo DiCaprio|Actor, USA;Angelina Jolie|Actress, USA;Lady Gaga|Singer, USA;Tiger Woods|Golfer, USA;LeBron James|Basketball, USA;Michael Phelps|Swimmer, USA;Simone Biles|Gymnast, USA;Babe Ruth|Baseball, USA;Jesse Owens|Sprinter, USA;Wayne Gretzky|Hockey, Canada;Celine Dion|Singer, Canada;Terry Fox|Athlete, Canada;Thomas Edison|Inventor, USA;Barack Obama|President, USA;Franklin D. Roosevelt|President, USA;George Washington|President, USA;Elon Musk|Entrepreneur, South Africa/USA;Steve Irwin|Conservationist, Australia;Nicole Kidman|Actress, Australia;Don Bradman|Cricketer, Australia;Ernest Rutherford|Physicist, New Zealand;Edmund Hillary|Mountaineer, New Zealand;Jacinda Ardern|Prime Minister, New Zealand;Tenzing Norgay|Sherpa, Nepal;Gautama Buddha|Teacher, Nepal/India;14th Dalai Lama|Spiritual leader, Tibet;Sheikh Mujibur Rahman|Statesman, Bangladesh;Muhammad Yunus|Economist, Bangladesh;Muhammad Ali Jinnah|Founder, Pakistan;Imran Khan|Cricketer, Pakistan;Nusrat Fateh Ali Khan|Singer, Pakistan;Abdus Salam|Physicist, Pakistan;Muttiah Muralitharan|Cricketer, Sri Lanka;Patrice Lumumba|Statesman, Congo;Thomas Sankara|Leader, Burkina Faso;Ngozi Okonjo-Iweala|Economist, Nigeria;Hakeem Olajuwon|Basketball, Nigeria;Desmond Tutu|Archbishop, South Africa;Trevor Noah|Comedian, South Africa;Cesária Évora|Singer, Cape Verde;Ellen Johnson Sirleaf|President, Liberia`;
+const XC=`Mario|Mario|Games;Sonic the Hedgehog|Sonic|Games;Pikachu|Pikachu|Games/Anime;Link (The Legend of Zelda)|Link|Games;Lara Croft|Lara Croft|Games;Pac-Man|Pac-Man|Games;Donkey Kong (character)|Donkey Kong|Games;Kratos (God of War)|Kratos|Games;Master Chief (Halo)|Master Chief|Games;Geralt of Rivia|Geralt of Rivia|Games/Books;Samus Aran|Samus Aran|Games;Crash Bandicoot (character)|Crash Bandicoot|Games;Mickey Mouse|Mickey Mouse|Animation;Donald Duck|Donald Duck|Animation;Bugs Bunny|Bugs Bunny|Animation;Homer Simpson|Homer Simpson|TV;SpongeBob SquarePants (character)|SpongeBob|TV;Shrek (character)|Shrek|Movies;Simba|Simba|Movies;Elsa (Frozen)|Elsa|Movies;Winnie-the-Pooh|Winnie-the-Pooh|Books/Movies;Batman|Batman|Comics;Superman|Superman|Comics;Spider-Man|Spider-Man|Comics;Iron Man|Iron Man|Comics/Movies;Captain America|Captain America|Comics;Wonder Woman|Wonder Woman|Comics;Hulk (comics)|Hulk|Comics;Black Panther (character)|Black Panther|Comics;Darth Vader|Darth Vader|Movies;Luke Skywalker|Luke Skywalker|Movies;Yoda|Yoda|Movies;Han Solo|Han Solo|Movies;Harry Potter (character)|Harry Potter|Books/Movies;Hermione Granger|Hermione Granger|Books/Movies;Gandalf|Gandalf|Books/Movies;Frodo Baggins|Frodo Baggins|Books/Movies;Sherlock Holmes|Sherlock Holmes|Books;James Bond (literary character)|James Bond|Books/Movies;Indiana Jones (character)|Indiana Jones|Movies;Jack Sparrow|Jack Sparrow|Movies;Joker (character)|Joker|Comics/Movies;Hamlet (character)|Hamlet|Theatre;Don Quixote (character)|Don Quixote|Books;Alice (Alice's Adventures in Wonderland)|Alice|Books;Peter Pan (character)|Peter Pan|Books;Count Dracula|Dracula|Books;Frankenstein's monster|Frankenstein's monster|Books;Tarzan|Tarzan|Books;Robin Hood|Robin Hood|Folklore;Goku|Goku|Anime;Naruto Uzumaki|Naruto Uzumaki|Anime;Monkey D. Luffy|Luffy|Anime;Doraemon (character)|Doraemon|Anime;Astro Boy (character)|Astro Boy|Anime;Totoro|Totoro|Anime;Hello Kitty|Hello Kitty|Merchandise;Mowgli|Mowgli|Books;Tintin (character)|Tintin|Comics;Asterix (character)|Asterix|Comics;Snoopy|Snoopy|Comics;Garfield (character)|Garfield|Comics;Scooby-Doo (character)|Scooby-Doo|TV;Mr. Bean (character)|Mr. Bean|TV;Rocky Balboa|Rocky Balboa|Movies;Forrest Gump (character)|Forrest Gump|Movies;Neo (The Matrix)|Neo|Movies;Ellen Ripley|Ellen Ripley|Movies;Rick Sanchez|Rick Sanchez|TV;Walter White (Breaking Bad)|Walter White|TV;Tyrion Lannister|Tyrion Lannister|TV/Books;Daenerys Targaryen|Daenerys Targaryen|TV/Books;Pippi Longstocking|Pippi Longstocking|Books;Anne Shirley|Anne of Green Gables|Books;Hercules|Hercules|Mythology;Ravana|Ravana|Epics;Hanuman|Hanuman|Epics;Arjuna|Arjuna|Epics;Karna|Karna|Epics`;
+const WT={"Panda":"Giant panda","Seal":"Pinniped","Rooster":"Chicken","Cow":"Cattle","Bee":"Honey bee","Elephant":"African bush elephant","Light bulb":"Incandescent light bulb","Key":"Key (lock)","Books":"Book","Cap":"Baseball cap","Socks":"Sock","Fork and knife":"Fork","Pushpin":"Drawing pin","Keyboard":"Computer keyboard","United States":"Flag of the United States","United Kingdom":"Flag of the United Kingdom","Netherlands":"Flag of the Netherlands","United Arab Emirates":"Flag of the United Arab Emirates","Philippines":"Flag of the Philippines","Bat":"Bat"};
+const L=s=>s.split(';').map(x=>{const[a,b,c]=x.split('|');return[a,b||a,c||'']});
+const DATA={
+animals:{label:"Animals",items:[...XA.split(";").map(x=>{const[n,t]=x.split("=");return["",n,"",t||n]}),["🐘","Elephant"],["🦒","Giraffe"],["🐯","Tiger"],["🦁","Lion"],["🐼","Panda"],["🦘","Kangaroo"],["🐨","Koala"],["🐧","Penguin"],["🦉","Owl"],["🦅","Eagle"],["🦜","Parrot"],["🦚","Peacock"],["🦩","Flamingo"],["🐢","Turtle"],["🐊","Crocodile"],["🦎","Lizard"],["🐍","Snake"],["🐙","Octopus"],["🦈","Shark"],["🐬","Dolphin"],["🐋","Whale"],["🦀","Crab"],["🦋","Butterfly"],["🐝","Bee"],["🐜","Ant"],["🦂","Scorpion"],["🐺","Wolf"],["🦊","Fox"],["🐻","Bear"],["🦌","Deer"],["🐎","Horse"],["🐪","Camel"],["🦓","Zebra"],["🦏","Rhinoceros"],["🦛","Hippopotamus"],["🦥","Sloth"],["🦦","Otter"],["🐇","Rabbit"],["🐿️","Squirrel"],["🦔","Hedgehog"],["🐄","Cow"],["🐖","Pig"],["🐑","Sheep"],["🐓","Rooster"],["🐸","Frog"],["🦭","Seal"],["🐒","Monkey"],["🦍","Gorilla"],["🐆","Leopard"],["🦇","Bat"]]},
+countries:{label:"Countries",items:[["IN","India"],["CN","China"],["JP","Japan"],["KR","South Korea"],["ID","Indonesia"],["TH","Thailand"],["VN","Vietnam"],["PH","Philippines"],["PK","Pakistan"],["BD","Bangladesh"],["LK","Sri Lanka"],["NP","Nepal"],["IR","Iran"],["IQ","Iraq"],["SA","Saudi Arabia"],["AE","United Arab Emirates"],["TR","Turkey"],["IL","Israel"],["EG","Egypt"],["NG","Nigeria"],["KE","Kenya"],["ET","Ethiopia"],["GH","Ghana"],["ZA","South Africa"],["MA","Morocco"],["DZ","Algeria"],["TZ","Tanzania"],["SN","Senegal"],["US","United States"],["CA","Canada"],["MX","Mexico"],["CU","Cuba"],["JM","Jamaica"],["BR","Brazil"],["AR","Argentina"],["CL","Chile"],["CO","Colombia"],["PE","Peru"],["VE","Venezuela"],["GB","United Kingdom"],["IE","Ireland"],["FR","France"],["DE","Germany"],["IT","Italy"],["ES","Spain"],["PT","Portugal"],["NL","Netherlands"],["SE","Sweden"],["NO","Norway"],["FI","Finland"],["PL","Poland"],["UA","Ukraine"],["RU","Russia"],["GR","Greece"],["CH","Switzerland"],["AU","Australia"],["NZ","New Zealand"],["FJ","Fiji"],["KZ","Kazakhstan"],["MN","Mongolia"]].map(([c,n])=>[flag(c),n])},
+objects:{label:"Objects",items:[["🪑","Chair"],["✏️","Pencil"],["🖊️","Pen"],["📚","Books"],["💡","Light bulb"],["🔑","Key"],["⏰","Alarm clock"],["☂️","Umbrella"],["🎒","Backpack"],["👓","Glasses"],["🧢","Cap"],["👟","Shoe"],["🧦","Socks"],["🪥","Toothbrush"],["🧴","Bottle"],["🥄","Spoon"],["🍴","Fork and knife"],["🔪","Kitchen knife"],["🍳","Frying pan"],["🛏️","Bed"],["🚪","Door"],["🪟","Window"],["🧲","Magnet"],["🔦","Flashlight"],["🔨","Hammer"],["🪛","Screwdriver"],["✂️","Scissors"],["📎","Paperclip"],["📌","Pushpin"],["🕰️","Clock"],["📱","Mobile phone"],["💻","Laptop"],["⌨️","Keyboard"],["🖱️","Computer mouse"],["🎧","Headphones"],["📷","Camera"],["🔭","Telescope"],["🧭","Compass"],["⚽","Football"],["🎸","Guitar"],["🥁","Drum"],["🚲","Bicycle"],["⛵","Sailboat"],["🪣","Bucket"],["🧹","Broom"],["🛒","Shopping cart"],["🪞","Mirror"],["🧸","Teddy bear"],["🎈","Balloon"],["🕯️","Candle"]]},
+people:{label:"Personalities",wiki:true,items:PEOPLE.concat(L(XP))},
+chars:{label:"Characters",wiki:true,items:L(XC)}
+};
+const on=new Set(Object.keys(DATA));
+const BAKED=[];
+const baked=new Set(BAKED);
+const NOTE0=document.getElementById('note').textContent;
+let bag=[];
+let del=new Set();try{del=new Set(JSON.parse(localStorage.getItem('rp_del')||'[]'))}catch(e){}
+let cur=null;
+function saveDel(){try{localStorage.setItem('rp_del',JSON.stringify([...del]))}catch(e){}}
+const $=id=>document.getElementById(id);
+function renderChips(){
+ $("chips").innerHTML="";
+ for(const k in DATA){
+  const b=document.createElement("button");
+  b.className="chip";b.textContent=DATA[k].label;b.setAttribute("aria-pressed",on.has(k));
+  b.onclick=()=>{
+   if(on.has(k)){if(on.size===1){$("note").textContent="Keep at least one category on.";return}on.delete(k)}else on.add(k);
+   $("note").textContent="";bag=[];renderChips();
+  };
+  $("chips").appendChild(b);
+ }
+}
+function refill(){
+ bag=[];const seen=new Set();
+ for(const k of on){const c=DATA[k];
+  for(const it of c.items){
+   const o=c.wiki?{e:"",n:it[1],t:it[0],tag:it[2]||c.label}:{e:it[0],n:it[1],t:it[3]||WT[it[1]]||(k==="countries"?"Flag of "+it[1]:it[1]),tag:c.label};
+   const key=k+'|'+o.n;if(seen.has(key)||del.has(key)||baked.has(key))continue;seen.add(key);o.key=key;bag.push(o);
+  }}
+ for(let i=bag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]]}
+}
+let tok=0;
+function next(){
+ if(!bag.length)refill();
+ if(!bag.length){cur=null;tok++;$('pic').textContent='🫥';$('name').textContent='Nothing left';$('tag').textContent='Enable a category or restore deleted entries';return}
+ const o=bag.pop(),t=++tok;cur=o;
+ $("name").textContent=o.n;$("tag").textContent=o.tag;
+ if(o.e)$("pic").textContent=o.e;
+ else{const ini=o.n.replace(/[^A-Za-z\u00C0-\u024F ]/g,"").split(" ").filter(Boolean).slice(0,2).map(x=>x[0]).join("");
+  $("pic").innerHTML='<div class="mono">'+ini+'</div>'}
+ fetch("https://en.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(o.t.replace(/ /g,"_")))
+  .then(r=>r.json()).then(d=>{
+   const u=d.type!=="disambiguation"&&d.thumbnail&&d.thumbnail.source;
+   if(!u||t!==tok)return;
+   const im=new Image();im.className="photo";im.alt=o.n;
+   im.onload=()=>{if(t===tok){$("pic").replaceChildren(im)}};
+   im.src=u;
+  }).catch(()=>{});
+}
+$("next").onclick=next;
+const menu=$("menu");
+function hideMenu(){menu.style.display="none"}
+var showMenu=function(e){
+ if(!cur)return;e.preventDefault();
+ menu.style.display="block";
+ const w=menu.offsetWidth,h=menu.offsetHeight;
+ menu.style.left=Math.max(8,Math.min(e.clientX,innerWidth-w-8))+"px";
+ menu.style.top=Math.max(8,Math.min(e.clientY,innerHeight-h-8))+"px";
+};
+$("pic").addEventListener("contextmenu",e=>showMenu(e));
+$("pic").addEventListener("dblclick",e=>showMenu(e));
+let shownAt=0,lp=null;
+const _sm=showMenu;showMenu=function(e){shownAt=Date.now();_sm(e)};
+$("pic").addEventListener("touchstart",e=>{const t=e.touches[0];lp=setTimeout(()=>showMenu({clientX:t.clientX,clientY:t.clientY,preventDefault(){}}),600)},{passive:true});
+["touchend","touchmove","touchcancel"].forEach(n=>$("pic").addEventListener(n,()=>clearTimeout(lp),{passive:true}));
+document.addEventListener("click",e=>{if(Date.now()-shownAt<500)return;if(!menu.contains(e.target))hideMenu()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")hideMenu()});
+$("cancelbtn").onclick=hideMenu;
+$("delbtn").onclick=()=>{
+ if(!cur)return;
+ del.add(cur.key);saveDel();
+ bag=bag.filter(x=>x.key!==cur.key);
+ hideMenu();showRestore();next();
+};
+function showRestore(){
+ const r=$("rest");
+ const pend=[...del].filter(k=>!baked.has(k)).length;
+ if(!del.size&&!baked.size){r.textContent="";return}
+ let h=(del.size+baked.size)+' deleted entr'+((del.size+baked.size)===1?'y':'ies')+' hidden';
+ if(pend)h+=' · <a id="sv">save permanent copy</a>';
+ if(del.size)h+=' · <a id="rs">restore unsaved</a>';
+ r.innerHTML=h;
+ if(pend)$("sv").onclick=exportCopy;
+ if(del.size)$("rs").onclick=()=>{del.clear();saveDel();bag=[];showRestore();$("note").textContent="Restored."};
+}
+function exportCopy(){
+ const all=[...new Set([...baked,...del])];
+ const c=document.documentElement.cloneNode(true);
+ c.querySelector("#chips").innerHTML="";
+ c.querySelector("#pic").textContent="🎲";
+ c.querySelector("#name").textContent="Tap Next to start";
+ c.querySelector("#tag").textContent="";
+ c.querySelector("#note").textContent=NOTE0;
+ c.querySelector("#rest").textContent="";
+ c.querySelector("#menu").removeAttribute("style");
+ const sc=[...c.querySelectorAll("script")].pop();
+ sc.textContent=sc.textContent.replace(/const BAKED=\[[^\n]*\];/,()=>"const BAKED="+JSON.stringify(all)+";");
+ const blob=new Blob(["<!DOCTYPE html>\n"+c.outerHTML],{type:"text/html"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="random-picture-app.html";
+ document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+ $("note").textContent="Saved. Use the downloaded file from now on; deletions are built into it.";
+}
+showRestore();
+
+renderChips();
+</script>
+</body>
+</html>
