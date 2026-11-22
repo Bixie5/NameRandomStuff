@@ -28,6 +28,13 @@ p.sub{margin:0 0 16px;color:var(--mute);font-size:14px}
 #rest{margin-top:6px;text-align:center;font-size:12px}
 #rest a{color:var(--accent);cursor:pointer;text-decoration:underline}
 .pic{cursor:context-menu;user-select:none}
+.listbar{display:flex;flex-wrap:wrap;gap:8px;margin:-6px 0 16px}
+.listbar button,.mrow button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}
+.mbox{background:var(--card);border-radius:16px;padding:14px;width:100%;max-width:440px}
+.mhint{font-size:12px;color:var(--mute);margin-bottom:8px}
+.mbox textarea{width:100%;height:50vh;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;font-size:14px;resize:none}
+.mrow{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
 .name{font-size:26px;font-weight:600}
 .tag{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
 button.next{margin-top:18px;width:100%;padding:14px;font-size:17px;border:0;border-radius:14px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
@@ -39,6 +46,8 @@ button.next{margin-top:18px;width:100%;padding:14px;font-size:17px;border:0;bord
 <h1>Random Picture</h1>
 <p class="sub">Pick categories, then tap Next.</p>
 <div class="chips" id="chips"></div>
+<div class="listbar"><button id="upl">Upload list</button><button id="edl">Edit list</button><button id="dll">Download list</button><button id="dla">Download all names</button><input type="file" id="fin" accept=".txt,text/plain" hidden></div>
+<div class="modal" id="modal"><div class="mbox"><div class="mhint">One name per line. Duplicates are counted once. Lines starting with # are ignored.</div><textarea id="ta"></textarea><div class="mrow"><button id="mcancel">Cancel</button><button id="msave">Save</button></div></div></div>
 <div class="card" aria-live="polite">
 <div class="pic" id="pic">🎲</div>
 <div class="name" id="name">Tap Next to start</div>
@@ -61,11 +70,17 @@ const DATA={
 animals:{label:"Animals",items:[...XA.split(";").map(x=>{const[n,t]=x.split("=");return["",n,"",t||n]}),["🐘","Elephant"],["🦒","Giraffe"],["🐯","Tiger"],["🦁","Lion"],["🐼","Panda"],["🦘","Kangaroo"],["🐨","Koala"],["🐧","Penguin"],["🦉","Owl"],["🦅","Eagle"],["🦜","Parrot"],["🦚","Peacock"],["🦩","Flamingo"],["🐢","Turtle"],["🐊","Crocodile"],["🦎","Lizard"],["🐍","Snake"],["🐙","Octopus"],["🦈","Shark"],["🐬","Dolphin"],["🐋","Whale"],["🦀","Crab"],["🦋","Butterfly"],["🐝","Bee"],["🐜","Ant"],["🦂","Scorpion"],["🐺","Wolf"],["🦊","Fox"],["🐻","Bear"],["🦌","Deer"],["🐎","Horse"],["🐪","Camel"],["🦓","Zebra"],["🦏","Rhinoceros"],["🦛","Hippopotamus"],["🦥","Sloth"],["🦦","Otter"],["🐇","Rabbit"],["🐿️","Squirrel"],["🦔","Hedgehog"],["🐄","Cow"],["🐖","Pig"],["🐑","Sheep"],["🐓","Rooster"],["🐸","Frog"],["🦭","Seal"],["🐒","Monkey"],["🦍","Gorilla"],["🐆","Leopard"],["🦇","Bat"]]},
 countries:{label:"Countries",items:[["IN","India"],["CN","China"],["JP","Japan"],["KR","South Korea"],["ID","Indonesia"],["TH","Thailand"],["VN","Vietnam"],["PH","Philippines"],["PK","Pakistan"],["BD","Bangladesh"],["LK","Sri Lanka"],["NP","Nepal"],["IR","Iran"],["IQ","Iraq"],["SA","Saudi Arabia"],["AE","United Arab Emirates"],["TR","Turkey"],["IL","Israel"],["EG","Egypt"],["NG","Nigeria"],["KE","Kenya"],["ET","Ethiopia"],["GH","Ghana"],["ZA","South Africa"],["MA","Morocco"],["DZ","Algeria"],["TZ","Tanzania"],["SN","Senegal"],["US","United States"],["CA","Canada"],["MX","Mexico"],["CU","Cuba"],["JM","Jamaica"],["BR","Brazil"],["AR","Argentina"],["CL","Chile"],["CO","Colombia"],["PE","Peru"],["VE","Venezuela"],["GB","United Kingdom"],["IE","Ireland"],["FR","France"],["DE","Germany"],["IT","Italy"],["ES","Spain"],["PT","Portugal"],["NL","Netherlands"],["SE","Sweden"],["NO","Norway"],["FI","Finland"],["PL","Poland"],["UA","Ukraine"],["RU","Russia"],["GR","Greece"],["CH","Switzerland"],["AU","Australia"],["NZ","New Zealand"],["FJ","Fiji"],["KZ","Kazakhstan"],["MN","Mongolia"]].map(([c,n])=>[flag(c),n])},
 objects:{label:"Objects",items:[["🪑","Chair"],["✏️","Pencil"],["🖊️","Pen"],["📚","Books"],["💡","Light bulb"],["🔑","Key"],["⏰","Alarm clock"],["☂️","Umbrella"],["🎒","Backpack"],["👓","Glasses"],["🧢","Cap"],["👟","Shoe"],["🧦","Socks"],["🪥","Toothbrush"],["🧴","Bottle"],["🥄","Spoon"],["🍴","Fork and knife"],["🔪","Kitchen knife"],["🍳","Frying pan"],["🛏️","Bed"],["🚪","Door"],["🪟","Window"],["🧲","Magnet"],["🔦","Flashlight"],["🔨","Hammer"],["🪛","Screwdriver"],["✂️","Scissors"],["📎","Paperclip"],["📌","Pushpin"],["🕰️","Clock"],["📱","Mobile phone"],["💻","Laptop"],["⌨️","Keyboard"],["🖱️","Computer mouse"],["🎧","Headphones"],["📷","Camera"],["🔭","Telescope"],["🧭","Compass"],["⚽","Football"],["🎸","Guitar"],["🥁","Drum"],["🚲","Bicycle"],["⛵","Sailboat"],["🪣","Bucket"],["🧹","Broom"],["🛒","Shopping cart"],["🪞","Mirror"],["🧸","Teddy bear"],["🎈","Balloon"],["🕯️","Candle"]]},
-people:{label:"Personalities",wiki:true,items:PEOPLE.concat(L(XP))},
-chars:{label:"Characters",wiki:true,items:L(XC)}
+people:{label:"Personalities",wiki:true,items:PEOPLE.concat(XP.split(';').map(x=>{const[a,b]=x.split('|');return[a,a,b]}))},
+chars:{label:"Characters",wiki:true,items:L(XC)},
+mylist:{label:"My List",wiki:true,items:[]}
 };
 const on=new Set(Object.keys(DATA));
+let myList=null;try{const q=localStorage.getItem('rp_list');if(q)myList=JSON.parse(q)}catch(e){}
+if(!Array.isArray(myList))myList=LISTB.slice();
+function syncList(){DATA.mylist.items=myList.map(n=>[n,n,'My List']);try{localStorage.setItem('rp_list',JSON.stringify(myList))}catch(e){}}
+syncList();
 const BAKED=[];
+const LISTB=[];
 const baked=new Set(BAKED);
 const NOTE0=document.getElementById('note').textContent;
 let bag=[];
@@ -77,7 +92,7 @@ function renderChips(){
  $("chips").innerHTML="";
  for(const k in DATA){
   const b=document.createElement("button");
-  b.className="chip";b.textContent=DATA[k].label;b.setAttribute("aria-pressed",on.has(k));
+  b.className="chip";b.textContent=DATA[k].label+(k==="mylist"?" ("+myList.length+")":"");b.setAttribute("aria-pressed",on.has(k));
   b.onclick=()=>{
    if(on.has(k)){if(on.size===1){$("note").textContent="Keep at least one category on.";return}on.delete(k)}else on.add(k);
    $("note").textContent="";bag=[];renderChips();
@@ -89,7 +104,7 @@ function refill(){
  bag=[];const seen=new Set();
  for(const k of on){const c=DATA[k];
   for(const it of c.items){
-   const o=c.wiki?{e:"",n:it[1],t:it[0],tag:it[2]||c.label}:{e:it[0],n:it[1],t:it[3]||WT[it[1]]||(k==="countries"?"Flag of "+it[1]:it[1]),tag:c.label};
+   const o=c.wiki?{e:"",n:it[1],t:it[0],tag:it[2]||c.label,k:k}:{e:it[0],n:it[1],t:it[3]||WT[it[1]]||(k==="countries"?"Flag of "+it[1]:it[1]),tag:c.label,k:k};
    const key=k+'|'+o.n;if(seen.has(key)||del.has(key)||baked.has(key))continue;seen.add(key);o.key=key;bag.push(o);
   }}
  for(let i=bag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]]}
@@ -103,16 +118,33 @@ function next(){
  if(o.e)$("pic").textContent=o.e;
  else{const ini=o.n.replace(/[^A-Za-z\u00C0-\u024F ]/g,"").split(" ").filter(Boolean).slice(0,2).map(x=>x[0]).join("");
   $("pic").innerHTML='<div class="mono">'+ini+'</div>'}
- fetch("https://en.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(o.t.replace(/ /g,"_")))
-  .then(r=>r.json()).then(d=>{
-   const u=d.type!=="disambiguation"&&d.thumbnail&&d.thumbnail.source;
-   if(!u||t!==tok)return;
-   const im=new Image();im.className="photo";im.alt=o.n;
-   im.onload=()=>{if(t===tok){$("pic").replaceChildren(im)}};
-   im.src=u;
-  }).catch(()=>{});
+ getThumb(o).then(u=>{
+  if(!u||t!==tok)return;
+  const im=new Image();im.className="photo";im.alt=o.n;
+  im.onload=()=>{if(t===tok)$("pic").replaceChildren(im)};
+  im.src=u;
+ });
+}
+function getThumb(o){
+ const sum=fetch("https://en.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(o.t.replace(/ /g,"_"))).then(r=>r.json()).then(d=>d.type!=="disambiguation"&&d.thumbnail?d.thumbnail.source:null).catch(()=>null);
+ if(o.k!=="mylist")return sum;
+ return sum.then(u=>u||fetch("https://en.wikipedia.org/w/rest.php/v1/search/title?limit=1&q="+encodeURIComponent(o.t)).then(r=>r.json()).then(d=>{const p=d.pages&&d.pages[0];const x=p&&p.thumbnail&&p.thumbnail.url;return x?(x.startsWith("//")?"https:"+x:x):null}).catch(()=>null));
 }
 $("next").onclick=next;
+function parseNames(txt){const seen=new Set(),out=[];for(let l of txt.replace(/^\uFEFF/,"").split(/\r?\n/)){l=l.trim();if(!l||l[0]==="#")continue;const k=l.toLowerCase();if(seen.has(k))continue;seen.add(k);out.push(l)}return out}
+function setList(arr,msg){myList=arr;syncList();bag=[];renderChips();$("note").textContent=msg}
+function dl(name,text){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/plain"}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+$("upl").onclick=()=>$("fin").click();
+$("fin").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{
+ const raw=r.result.split(/\r?\n/).filter(x=>x.trim()&&x.trim()[0]!=="#").length;const a=parseNames(r.result);
+ setList(a,"List loaded: "+a.length+" names"+(raw>a.length?" ("+(raw-a.length)+" duplicates ignored)":"")+". It replaces the previous list.")};
+ r.readAsText(f);e.target.value=""};
+$("dll").onclick=()=>{if(!myList.length){$("note").textContent="Your list is empty.";return}dl("my-list.txt",myList.join("\n")+"\n")};
+$("dla").onclick=()=>{const n=[];for(const k in DATA){if(k==="mylist")continue;for(const it of DATA[k].items)n.push(it[1])}dl("all-names.txt",[...new Set(n)].join("\n")+"\n")};
+$("edl").onclick=()=>{$("ta").value=myList.join("\n");$("modal").style.display="flex"};
+$("mcancel").onclick=()=>{$("modal").style.display="none"};
+$("msave").onclick=()=>{const a=parseNames($("ta").value);$("modal").style.display="none";setList(a,"List saved: "+a.length+" names.")};
+
 const menu=$("menu");
 function hideMenu(){menu.style.display="none"}
 var showMenu=function(e){
@@ -133,7 +165,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")hideMenu()});
 $("cancelbtn").onclick=hideMenu;
 $("delbtn").onclick=()=>{
  if(!cur)return;
- del.add(cur.key);saveDel();
+ if(cur.k==="mylist"){myList=myList.filter(n=>n!==cur.n);syncList();renderChips()}else{del.add(cur.key);saveDel()}
  bag=bag.filter(x=>x.key!==cur.key);
  hideMenu();showRestore();next();
 };
@@ -158,8 +190,9 @@ function exportCopy(){
  c.querySelector("#note").textContent=NOTE0;
  c.querySelector("#rest").textContent="";
  c.querySelector("#menu").removeAttribute("style");
+ c.querySelector("#modal").removeAttribute("style");
  const sc=[...c.querySelectorAll("script")].pop();
- sc.textContent=sc.textContent.replace(/const BAKED=\[[^\n]*\];/,()=>"const BAKED="+JSON.stringify(all)+";");
+ sc.textContent=sc.textContent.replace(/const BAKED=\[[^\n]*\];/,()=>"const BAKED="+JSON.stringify(all)+";").replace(/const LISTB=\[[^\n]*\];/,()=>"const LISTB="+JSON.stringify(myList)+";");
  const blob=new Blob(["<!DOCTYPE html>\n"+c.outerHTML],{type:"text/html"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="random-picture-app.html";
  document.body.appendChild(a);a.click();a.remove();
